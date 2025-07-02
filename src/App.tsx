@@ -3,7 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { MainLayout } from "./components/layout/MainLayout";
+import AntiPortfolio from "./pages/AntiPortfolio";
+import PersonalDashboard from "./pages/PersonalDashboard";
+import PortfolioComparison from "./pages/PortfolioComparison";
+import CRMIntegration from "./pages/CRMIntegration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -14,11 +18,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <MainLayout>
+          <Routes>
+            <Route path="/" element={<AntiPortfolio />} />
+            <Route path="/personal" element={<PersonalDashboard />} />
+            <Route path="/comparison" element={<PortfolioComparison />} />
+            <Route path="/crm" element={<CRMIntegration />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </MainLayout>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
