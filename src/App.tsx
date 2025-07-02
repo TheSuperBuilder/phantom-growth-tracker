@@ -7,7 +7,7 @@ import { MainLayout } from "./components/layout/MainLayout";
 import AntiPortfolio from "./pages/AntiPortfolio";
 import PersonalDashboard from "./pages/PersonalDashboard";
 import PortfolioComparison from "./pages/PortfolioComparison";
-import CRMIntegration from "./pages/CRMIntegration";
+import Integrations from "./pages/Integrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +23,7 @@ const App = () => (
             <Route path="/" element={<AntiPortfolio />} />
             <Route path="/personal" element={<PersonalDashboard />} />
             <Route path="/comparison" element={<PortfolioComparison />} />
-            <Route path="/crm" element={<CRMIntegration />} />
+            <Route path="/integrations" element={<Integrations />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </MainLayout>

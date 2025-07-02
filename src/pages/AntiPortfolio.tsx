@@ -4,11 +4,8 @@ import { StatsOverview } from "@/components/dashboard/StatsOverview";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CompanyForm } from "@/components/companies/CompanyForm";
 import { CompanyTable } from "@/components/companies/CompanyTable";
-import { CSVImport } from "@/components/companies/CSVImport";
-import { DataSyncControls } from "@/components/companies/DataSyncControls";
-import { useAntiPortfolioCompanies, useDeleteAntiPortfolioCompany, useCreateAntiPortfolioCompany } from "@/hooks/useCompanies";
+import { useAntiPortfolioCompanies, useDeleteAntiPortfolioCompany } from "@/hooks/useCompanies";
 import { useProfiles } from "@/hooks/useProfiles";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,7 +17,6 @@ export default function AntiPortfolio() {
   const { data: companies = [], isLoading } = useAntiPortfolioCompanies();
   const { data: profiles = [] } = useProfiles();
   const deleteCompany = useDeleteAntiPortfolioCompany();
-  const createCompany = useCreateAntiPortfolioCompany();
 
   const handleDelete = async (companyName: string) => {
     try {
@@ -38,19 +34,6 @@ export default function AntiPortfolio() {
     }
   };
 
-  const handleCSVImport = async (csvData: any[]) => {
-    for (const row of csvData) {
-      await createCompany.mutateAsync({
-        company_name: row.company_name,
-        current_value: row.current_value ? Number(row.current_value) : undefined,
-        past_value: row.past_value ? Number(row.past_value) : undefined,
-        decision_date: row.decision_date || undefined,
-        reason_not_investing: row.reason_not_investing || undefined,
-        industry: row.industry || undefined,
-        notes: row.notes || undefined,
-      });
-    }
-  };
 
   // Transform data for legacy components
   const mockCompanies = companies.map((company, index) => ({
@@ -131,9 +114,6 @@ export default function AntiPortfolio() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="table">Table View</TabsTrigger>
-          <TabsTrigger value="add">Add Company</TabsTrigger>
-          <TabsTrigger value="import">Bulk Import</TabsTrigger>
-          <TabsTrigger value="sync">Data Sync</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -192,25 +172,6 @@ export default function AntiPortfolio() {
             companies={companies} 
             type="anti-portfolio"
             onDelete={handleDelete}
-          />
-        </TabsContent>
-
-        <TabsContent value="add">
-          <CompanyForm type="anti-portfolio" />
-        </TabsContent>
-
-        <TabsContent value="import">
-          <CSVImport type="anti-portfolio" onImport={handleCSVImport} />
-        </TabsContent>
-
-        <TabsContent value="sync">
-          <DataSyncControls 
-            type="anti-portfolio" 
-            companies={companies.map((company, index) => ({
-              id: `${company.company_name}-${index}`,
-              company_name: company.company_name,
-              current_value: company.current_value
-            }))} 
           />
         </TabsContent>
       </Tabs>

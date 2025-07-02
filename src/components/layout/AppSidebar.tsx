@@ -15,7 +15,7 @@ const navigationItems = [
   { title: "Anti-Portfolio", url: "/", icon: "📊" },
   { title: "Personal Dashboard", url: "/personal", icon: "👤" },
   { title: "Portfolio Comparison", url: "/comparison", icon: "⚖️" },
-  { title: "CRM Integration", url: "/crm", icon: "🔗" },
+  { title: "Integrations", url: "/integrations", icon: "🔗" },
 ];
 
 export function AppSidebar() {
