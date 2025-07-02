@@ -83,15 +83,19 @@ export default function AntiPortfolio() {
   });
 
   // Calculate stats
-  const totalMissedValue = companies.reduce((sum, company) => sum + (company.current_value || 0), 0);
+  const totalMissedValue = companies.reduce((sum, company) => {
+    const missedValue = (company.current_value || 0) - (company.past_value || 0);
+    return sum + Math.max(0, missedValue); // Only count positive differences as missed value
+  }, 0);
   const totalCompanies = companies.length;
   const avgGrowth = companies.length > 0 ? companies.reduce((sum, company) => {
     if (!company.past_value || company.past_value === 0) return sum;
     return sum + (((company.current_value || 0) - company.past_value) / company.past_value) * 100;
   }, 0) / companies.length : 0;
   const biggestMiss = companies.reduce((biggest, company) => {
-    return (company.current_value || 0) > biggest.value 
-      ? { name: company.company_name, value: company.current_value || 0 }
+    const missedValue = (company.current_value || 0) - (company.past_value || 0);
+    return missedValue > biggest.value 
+      ? { name: company.company_name, value: missedValue }
       : biggest;
   }, { name: "", value: 0 });
 
