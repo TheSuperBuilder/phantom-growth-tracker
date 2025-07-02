@@ -3,64 +3,72 @@ import { CompanyCard } from "@/components/dashboard/CompanyCard";
 import { StatsOverview } from "@/components/dashboard/StatsOverview";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-// Mock data for demonstration
-const mockCompanies = [
-  {
-    id: "1",
-    name: "TechUnicorn",
-    sector: "AI/ML",
-    lastValuation: 50000000,
-    currentValuation: 1200000000,
-    dateConsidered: "2021-03-15",
-    reason: "Too early stage, concerns about market size",
-    vcLead: "Sarah Chen"
-  },
-  {
-    id: "2", 
-    name: "CryptoFlow",
-    sector: "FinTech",
-    lastValuation: 25000000,
-    currentValuation: 800000000,
-    dateConsidered: "2020-11-08",
-    reason: "Regulatory concerns, unproven team",
-    vcLead: "Mike Rodriguez"
-  },
-  {
-    id: "3",
-    name: "GreenTech Solutions",
-    sector: "CleanTech",
-    lastValuation: 75000000,
-    currentValuation: 450000000,
-    dateConsidered: "2021-07-22",
-    reason: "Long development cycle, competitive market",
-    vcLead: "Emily Watson"
-  },
-  {
-    id: "4",
-    name: "HealthAI",
-    sector: "HealthTech",
-    lastValuation: 100000000,
-    currentValuation: 85000000,
-    dateConsidered: "2022-01-10",
-    reason: "FDA approval timeline too uncertain",
-    vcLead: "David Kim"
-  },
-  {
-    id: "5",
-    name: "CloudScale",
-    sector: "Enterprise SaaS",
-    lastValuation: 200000000,
-    currentValuation: 1500000000,
-    dateConsidered: "2020-09-05",
-    reason: "Market too crowded, difficult differentiation",
-    vcLead: "Sarah Chen"
-  }
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CompanyForm } from "@/components/companies/CompanyForm";
+import { CompanyTable } from "@/components/companies/CompanyTable";
+import { CSVImport } from "@/components/companies/CSVImport";
+import { useAntiPortfolioCompanies, useDeleteAntiPortfolioCompany, useCreateAntiPortfolioCompany } from "@/hooks/useCompanies";
+import { useProfiles } from "@/hooks/useProfiles";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AntiPortfolio() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("growth");
+  const { toast } = useToast();
+  
+  const { data: companies = [], isLoading } = useAntiPortfolioCompanies();
+  const { data: profiles = [] } = useProfiles();
+  const deleteCompany = useDeleteAntiPortfolioCompany();
+  const createCompany = useCreateAntiPortfolioCompany();
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCompany.mutateAsync(id);
+      toast({
+        title: 'Success',
+        description: 'Company deleted successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete company',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCSVImport = async (csvData: any[]) => {
+    for (const row of csvData) {
+      // Find employee by name
+      const employee = profiles.find(p => 
+        p.full_name?.toLowerCase().includes(row.employee_name?.toLowerCase() || '') ||
+        p.email?.toLowerCase().includes(row.employee_name?.toLowerCase() || '')
+      );
+
+      await createCompany.mutateAsync({
+        company_name: row.company_name,
+        current_value: row.current_value ? Number(row.current_value) : undefined,
+        past_value: row.past_value ? Number(row.past_value) : undefined,
+        employee_id: employee?.id,
+        decision_date: row.decision_date || undefined,
+        reason_not_investing: row.reason_not_investing || undefined,
+        industry: row.industry || undefined,
+        notes: row.notes || undefined,
+      });
+    }
+  };
+
+  // Transform data for legacy components
+  const mockCompanies = companies.map(company => ({
+    id: company.id,
+    name: company.company_name,
+    sector: company.industry || "Unknown",
+    lastValuation: company.past_value || 0,
+    currentValuation: company.current_value || 0,
+    dateConsidered: company.decision_date || "",
+    reason: company.reason_not_investing || "",
+    vcLead: company.profiles?.full_name || "Unassigned"
+  }));
 
   const filteredCompanies = mockCompanies.filter(company =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,8 +78,8 @@ export default function AntiPortfolio() {
 
   const sortedCompanies = [...filteredCompanies].sort((a, b) => {
     if (sortBy === "growth") {
-      const aGrowth = ((a.currentValuation - a.lastValuation) / a.lastValuation) * 100;
-      const bGrowth = ((b.currentValuation - b.lastValuation) / b.lastValuation) * 100;
+      const aGrowth = a.lastValuation > 0 ? ((a.currentValuation - a.lastValuation) / a.lastValuation) * 100 : 0;
+      const bGrowth = b.lastValuation > 0 ? ((b.currentValuation - b.lastValuation) / b.lastValuation) * 100 : 0;
       return bGrowth - aGrowth;
     }
     if (sortBy === "valuation") {
@@ -81,16 +89,27 @@ export default function AntiPortfolio() {
   });
 
   // Calculate stats
-  const totalMissedValue = mockCompanies.reduce((sum, company) => sum + company.currentValuation, 0);
-  const totalCompanies = mockCompanies.length;
-  const avgGrowth = mockCompanies.reduce((sum, company) => {
-    return sum + ((company.currentValuation - company.lastValuation) / company.lastValuation) * 100;
-  }, 0) / mockCompanies.length;
-  const biggestMiss = mockCompanies.reduce((biggest, company) => {
-    return company.currentValuation > biggest.value 
-      ? { name: company.name, value: company.currentValuation }
+  const totalMissedValue = companies.reduce((sum, company) => sum + (company.current_value || 0), 0);
+  const totalCompanies = companies.length;
+  const avgGrowth = companies.length > 0 ? companies.reduce((sum, company) => {
+    if (!company.past_value || company.past_value === 0) return sum;
+    return sum + (((company.current_value || 0) - company.past_value) / company.past_value) * 100;
+  }, 0) / companies.length : 0;
+  const biggestMiss = companies.reduce((biggest, company) => {
+    return (company.current_value || 0) > biggest.value 
+      ? { name: company.company_name, value: company.current_value || 0 }
       : biggest;
   }, { name: "", value: 0 });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading anti-portfolio companies...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,51 +127,83 @@ export default function AntiPortfolio() {
           avgGrowth={avgGrowth}
           biggestMiss={biggestMiss}
         />
+      </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Input
-            placeholder="Search companies, sectors, or VCs..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-          />
-          <div className="flex gap-2">
-            <Button
-              variant={sortBy === "growth" ? "default" : "outline"}
-              onClick={() => setSortBy("growth")}
-              size="sm"
-            >
-              Sort by Growth
-            </Button>
-            <Button
-              variant={sortBy === "valuation" ? "default" : "outline"}
-              onClick={() => setSortBy("valuation")}
-              size="sm"
-            >
-              Sort by Valuation
-            </Button>
-            <Button
-              variant={sortBy === "name" ? "default" : "outline"}
-              onClick={() => setSortBy("name")}
-              size="sm"
-            >
-              Sort by Name
-            </Button>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="table">Table View</TabsTrigger>
+          <TabsTrigger value="add">Add Company</TabsTrigger>
+          <TabsTrigger value="import">Bulk Import</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Input
+              placeholder="Search companies, sectors, or VCs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant={sortBy === "growth" ? "default" : "outline"}
+                onClick={() => setSortBy("growth")}
+                size="sm"
+              >
+                Sort by Growth
+              </Button>
+              <Button
+                variant={sortBy === "valuation" ? "default" : "outline"}
+                onClick={() => setSortBy("valuation")}
+                size="sm"
+              >
+                Sort by Valuation
+              </Button>
+              <Button
+                variant={sortBy === "name" ? "default" : "outline"}
+                onClick={() => setSortBy("name")}
+                size="sm"
+              >
+                Sort by Name
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sortedCompanies.map((company) => (
-          <CompanyCard key={company.id} company={company} />
-        ))}
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedCompanies.map((company) => (
+              <CompanyCard key={company.id} company={company} />
+            ))}
+          </div>
 
-      {filteredCompanies.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No companies found matching your search.</p>
-        </div>
-      )}
+          {filteredCompanies.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                {companies.length === 0 
+                  ? 'No anti-portfolio companies yet. Add some using the tabs above.'
+                  : 'No companies found matching your search.'
+                }
+              </p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="table">
+          <CompanyTable 
+            companies={companies} 
+            type="anti-portfolio"
+            onDelete={handleDelete}
+          />
+        </TabsContent>
+
+        <TabsContent value="add">
+          <CompanyForm type="anti-portfolio" />
+        </TabsContent>
+
+        <TabsContent value="import">
+          <CSVImport type="anti-portfolio" onImport={handleCSVImport} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
