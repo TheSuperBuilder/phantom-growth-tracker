@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanyForm } from "@/components/companies/CompanyForm";
 import { CompanyTable } from "@/components/companies/CompanyTable";
 import { CSVImport } from "@/components/companies/CSVImport";
+import { DataSyncControls } from "@/components/companies/DataSyncControls";
 import { useAntiPortfolioCompanies, useDeleteAntiPortfolioCompany, useCreateAntiPortfolioCompany } from "@/hooks/useCompanies";
 import { useProfiles } from "@/hooks/useProfiles";
 import { useToast } from "@/hooks/use-toast";
@@ -135,6 +136,7 @@ export default function AntiPortfolio() {
           <TabsTrigger value="table">Table View</TabsTrigger>
           <TabsTrigger value="add">Add Company</TabsTrigger>
           <TabsTrigger value="import">Bulk Import</TabsTrigger>
+          <TabsTrigger value="sync">Data Sync</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -202,6 +204,10 @@ export default function AntiPortfolio() {
 
         <TabsContent value="import">
           <CSVImport type="anti-portfolio" onImport={handleCSVImport} />
+        </TabsContent>
+
+        <TabsContent value="sync">
+          <DataSyncControls type="anti-portfolio" companies={companies} />
         </TabsContent>
       </Tabs>
     </div>
