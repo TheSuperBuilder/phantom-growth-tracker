@@ -59,6 +59,75 @@ export type Database = {
           },
         ]
       }
+      current_value_companies: {
+        Row: {
+          company_name: string
+          created_at: string
+          current_value: number | null
+          id: string
+          industry: string | null
+          last_updated: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          industry?: string | null
+          last_updated?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          industry?: string | null
+          last_updated?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      past_value_companies: {
+        Row: {
+          company_name: string
+          created_at: string
+          decision_date: string | null
+          id: string
+          industry: string | null
+          notes: string | null
+          past_value: number | null
+          reason_not_investing: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          decision_date?: string | null
+          id?: string
+          industry?: string | null
+          notes?: string | null
+          past_value?: number | null
+          reason_not_investing?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          decision_date?: string | null
+          id?: string
+          industry?: string | null
+          notes?: string | null
+          past_value?: number | null
+          reason_not_investing?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfolio_companies: {
         Row: {
           company_name: string
@@ -138,7 +207,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      anti_portfolio_view: {
+        Row: {
+          company_name: string | null
+          current_value: number | null
+          current_value_updated: string | null
+          decision_date: string | null
+          growth_percentage: number | null
+          industry: string | null
+          notes: string | null
+          past_entry_created: string | null
+          past_value: number | null
+          reason_not_investing: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
