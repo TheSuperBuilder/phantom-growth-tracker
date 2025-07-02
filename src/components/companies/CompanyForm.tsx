@@ -58,7 +58,6 @@ export function CompanyForm({ type, onSuccess }: CompanyFormProps) {
           company_name: data.company_name,
           current_value: data.current_value,
           past_value: data.past_value,
-          employee_id: data.employee_id || undefined,
           decision_date: data.decision_date || undefined,
           reason_not_investing: data.reason_not_investing || undefined,
           industry: data.industry || undefined,

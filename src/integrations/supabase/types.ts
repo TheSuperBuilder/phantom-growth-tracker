@@ -9,56 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      anti_portfolio_companies: {
-        Row: {
-          company_name: string
-          created_at: string
-          current_value: number | null
-          decision_date: string | null
-          employee_id: string | null
-          id: string
-          industry: string | null
-          notes: string | null
-          past_value: number | null
-          reason_not_investing: string | null
-          updated_at: string
-        }
-        Insert: {
-          company_name: string
-          created_at?: string
-          current_value?: number | null
-          decision_date?: string | null
-          employee_id?: string | null
-          id?: string
-          industry?: string | null
-          notes?: string | null
-          past_value?: number | null
-          reason_not_investing?: string | null
-          updated_at?: string
-        }
-        Update: {
-          company_name?: string
-          created_at?: string
-          current_value?: number | null
-          decision_date?: string | null
-          employee_id?: string | null
-          id?: string
-          industry?: string | null
-          notes?: string | null
-          past_value?: number | null
-          reason_not_investing?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "anti_portfolio_companies_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       current_value_companies: {
         Row: {
           company_name: string

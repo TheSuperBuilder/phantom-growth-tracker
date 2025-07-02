@@ -22,9 +22,9 @@ export default function AntiPortfolio() {
   const deleteCompany = useDeleteAntiPortfolioCompany();
   const createCompany = useCreateAntiPortfolioCompany();
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (companyName: string) => {
     try {
-      await deleteCompany.mutateAsync(id);
+      await deleteCompany.mutateAsync(companyName);
       toast({
         title: 'Success',
         description: 'Company deleted successfully',
@@ -40,17 +40,10 @@ export default function AntiPortfolio() {
 
   const handleCSVImport = async (csvData: any[]) => {
     for (const row of csvData) {
-      // Find employee by name
-      const employee = profiles.find(p => 
-        p.full_name?.toLowerCase().includes(row.employee_name?.toLowerCase() || '') ||
-        p.email?.toLowerCase().includes(row.employee_name?.toLowerCase() || '')
-      );
-
       await createCompany.mutateAsync({
         company_name: row.company_name,
         current_value: row.current_value ? Number(row.current_value) : undefined,
         past_value: row.past_value ? Number(row.past_value) : undefined,
-        employee_id: employee?.id,
         decision_date: row.decision_date || undefined,
         reason_not_investing: row.reason_not_investing || undefined,
         industry: row.industry || undefined,
@@ -60,15 +53,15 @@ export default function AntiPortfolio() {
   };
 
   // Transform data for legacy components
-  const mockCompanies = companies.map(company => ({
-    id: company.id,
+  const mockCompanies = companies.map((company, index) => ({
+    id: `${company.company_name}-${index}`,
     name: company.company_name,
     sector: company.industry || "Unknown",
     lastValuation: company.past_value || 0,
     currentValuation: company.current_value || 0,
     dateConsidered: company.decision_date || "",
     reason: company.reason_not_investing || "",
-    vcLead: company.profiles?.full_name || "Unassigned"
+    vcLead: "N/A"
   }));
 
   const filteredCompanies = mockCompanies.filter(company =>
@@ -207,7 +200,14 @@ export default function AntiPortfolio() {
         </TabsContent>
 
         <TabsContent value="sync">
-          <DataSyncControls type="anti-portfolio" companies={companies} />
+          <DataSyncControls 
+            type="anti-portfolio" 
+            companies={companies.map((company, index) => ({
+              id: `${company.company_name}-${index}`,
+              company_name: company.company_name,
+              current_value: company.current_value
+            }))} 
+          />
         </TabsContent>
       </Tabs>
     </div>

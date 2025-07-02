@@ -11,7 +11,7 @@ interface CompanyTableProps {
   companies: (AntiPortfolioCompany | PortfolioCompany)[];
   type: 'anti-portfolio' | 'portfolio';
   onEdit?: (company: AntiPortfolioCompany | PortfolioCompany) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (identifier: string) => void;
 }
 
 export function CompanyTable({ companies, type, onEdit, onDelete }: CompanyTableProps) {
@@ -36,7 +36,7 @@ export function CompanyTable({ companies, type, onEdit, onDelete }: CompanyTable
   const filteredCompanies = companies.filter(company =>
     company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.industry?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    ('profiles' in company && company.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const sortedCompanies = [...filteredCompanies].sort((a, b) => {
@@ -131,70 +131,75 @@ export function CompanyTable({ companies, type, onEdit, onDelete }: CompanyTable
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedCompanies.map((company) => (
-              <TableRow key={company.id}>
-                <TableCell className="font-medium">
-                  {company.company_name}
-                </TableCell>
-                <TableCell>
-                  {company.industry ? (
-                    <Badge variant="secondary">{company.industry}</Badge>
+            {sortedCompanies.map((company, index) => {
+              const key = 'id' in company ? company.id : `${company.company_name}-${index}`;
+              const identifier = 'id' in company ? company.id : company.company_name;
+              
+              return (
+                <TableRow key={key}>
+                  <TableCell className="font-medium">
+                    {company.company_name}
+                  </TableCell>
+                  <TableCell>
+                    {company.industry ? (
+                      <Badge variant="secondary">{company.industry}</Badge>
+                    ) : (
+                      'N/A'
+                    )}
+                  </TableCell>
+                  {type === 'anti-portfolio' ? (
+                    <>
+                      <TableCell>
+                        {formatCurrency((company as AntiPortfolioCompany).past_value)}
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(company.current_value)}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate((company as AntiPortfolioCompany).decision_date)}
+                      </TableCell>
+                    </>
                   ) : (
-                    'N/A'
+                    <>
+                      <TableCell>
+                        {formatCurrency((company as PortfolioCompany).investment_value)}
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(company.current_value)}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate((company as PortfolioCompany).investment_date)}
+                      </TableCell>
+                    </>
                   )}
-                </TableCell>
-                {type === 'anti-portfolio' ? (
-                  <>
-                    <TableCell>
-                      {formatCurrency((company as AntiPortfolioCompany).past_value)}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(company.current_value)}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate((company as AntiPortfolioCompany).decision_date)}
-                    </TableCell>
-                  </>
-                ) : (
-                  <>
-                    <TableCell>
-                      {formatCurrency((company as PortfolioCompany).investment_value)}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(company.current_value)}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate((company as PortfolioCompany).investment_date)}
-                    </TableCell>
-                  </>
-                )}
-                <TableCell>
-                  {company.profiles?.full_name || 'Unassigned'}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    {onEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(company)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {onDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDelete(company.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>
+                    {'profiles' in company ? company.profiles?.full_name || 'Unassigned' : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(company)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(identifier)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         
