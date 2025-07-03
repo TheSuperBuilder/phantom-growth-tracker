@@ -314,3 +314,22 @@ export function useDeleteAntiPortfolioCompany() {
     },
   });
 }
+
+export function useUniquePersonNames() {
+  return useQuery({
+    queryKey: ['unique-person-names'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('anti_portfolio_view')
+        .select('person_name')
+        .not('person_name', 'is', null)
+        .order('person_name', { ascending: true });
+
+      if (error) throw error;
+      
+      // Get unique person names
+      const uniqueNames = [...new Set(data.map(item => item.person_name))].filter(Boolean);
+      return uniqueNames as string[];
+    },
+  });
+}

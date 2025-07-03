@@ -4,18 +4,22 @@ import { StatsOverview } from "@/components/dashboard/StatsOverview";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompanyTable } from "@/components/companies/CompanyTable";
-import { useAntiPortfolioCompanies, useDeleteAntiPortfolioCompany } from "@/hooks/useCompanies";
+import { useAntiPortfolioCompanies, useDeleteAntiPortfolioCompany, useUniquePersonNames } from "@/hooks/useCompanies";
 import { useProfiles } from "@/hooks/useProfiles";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AntiPortfolio() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("growth");
+  const [viewMode, setViewMode] = useState<"overall" | "personal">("overall");
+  const [selectedPerson, setSelectedPerson] = useState<string>("");
   const { toast } = useToast();
   
   const { data: companies = [], isLoading } = useAntiPortfolioCompanies();
   const { data: profiles = [] } = useProfiles();
+  const { data: personNames = [] } = useUniquePersonNames();
   const deleteCompany = useDeleteAntiPortfolioCompany();
 
   const handleDelete = async (companyName: string) => {
@@ -34,9 +38,13 @@ export default function AntiPortfolio() {
     }
   };
 
+  // Filter companies based on view mode
+  const filteredCompaniesByView = viewMode === "personal" && selectedPerson
+    ? companies.filter(company => company.person_name === selectedPerson)
+    : companies;
 
   // Transform data for legacy components
-  const mockCompanies = companies.map((company, index) => ({
+  const mockCompanies = filteredCompaniesByView.map((company, index) => ({
     id: `${company.company_name}-${index}`,
     name: company.company_name,
     sector: company.industry || "Unknown",
@@ -65,17 +73,21 @@ export default function AntiPortfolio() {
     return a.name.localeCompare(b.name);
   });
 
-  // Calculate stats
-  const totalMissedValue = companies.reduce((sum, company) => {
+  // Calculate stats for the current view
+  const currentCompanies = viewMode === "personal" && selectedPerson
+    ? companies.filter(company => company.person_name === selectedPerson)
+    : companies;
+    
+  const totalMissedValue = currentCompanies.reduce((sum, company) => {
     const missedValue = (company.current_value || 0) - (company.past_value || 0);
     return sum + Math.max(0, missedValue); // Only count positive differences as missed value
   }, 0);
-  const totalCompanies = companies.length;
-  const avgGrowth = companies.length > 0 ? companies.reduce((sum, company) => {
+  const totalCompanies = currentCompanies.length;
+  const avgGrowth = currentCompanies.length > 0 ? currentCompanies.reduce((sum, company) => {
     if (!company.past_value || company.past_value === 0) return sum;
     return sum + (((company.current_value || 0) - company.past_value) / company.past_value) * 100;
-  }, 0) / companies.length : 0;
-  const biggestMiss = companies.reduce((biggest, company) => {
+  }, 0) / currentCompanies.length : 0;
+  const biggestMiss = currentCompanies.reduce((biggest, company) => {
     const missedValue = (company.current_value || 0) - (company.past_value || 0);
     return missedValue > biggest.value 
       ? { name: company.company_name, value: missedValue }
@@ -102,12 +114,67 @@ export default function AntiPortfolio() {
           </p>
         </div>
 
-        <StatsOverview
-          totalMissedValue={totalMissedValue}
-          totalCompanies={totalCompanies}
-          avgGrowth={avgGrowth}
-          biggestMiss={biggestMiss}
-        />
+        {/* View Mode Selection */}
+        <Tabs defaultValue="overall" onValueChange={(value) => setViewMode(value as "overall" | "personal")}>
+          <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+            <TabsTrigger value="overall">Overall</TabsTrigger>
+            <TabsTrigger value="personal">Personal</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overall" className="space-y-6">
+            <StatsOverview
+              totalMissedValue={totalMissedValue}
+              totalCompanies={totalCompanies}
+              avgGrowth={avgGrowth}
+              biggestMiss={biggestMiss}
+            />
+          </TabsContent>
+
+          <TabsContent value="personal" className="space-y-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <Select value={selectedPerson} onValueChange={setSelectedPerson}>
+                  <SelectTrigger className="w-[280px] bg-background border-input">
+                    <SelectValue placeholder="Select a person..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border shadow-md">
+                    {personNames.map((person) => (
+                      <SelectItem key={person} value={person} className="cursor-pointer hover:bg-accent">
+                        {person}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedPerson && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSelectedPerson("")}
+                    size="sm"
+                  >
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
+              
+              {selectedPerson && (
+                <StatsOverview
+                  totalMissedValue={totalMissedValue}
+                  totalCompanies={totalCompanies}
+                  avgGrowth={avgGrowth}
+                  biggestMiss={biggestMiss}
+                />
+              )}
+              
+              {!selectedPerson && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    Please select a person to view their personal anti-portfolio.
+                  </p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
@@ -158,9 +225,13 @@ export default function AntiPortfolio() {
           {filteredCompanies.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
-                {companies.length === 0 
-                  ? 'No anti-portfolio companies yet. Add some using the tabs above.'
-                  : 'No companies found matching your search.'
+                {viewMode === "personal" 
+                  ? selectedPerson 
+                    ? `No anti-portfolio companies found for ${selectedPerson}.`
+                    : 'Please select a person to view their anti-portfolio.'
+                  : currentCompanies.length === 0 
+                    ? 'No anti-portfolio companies yet. Add some using the tabs above.'
+                    : 'No companies found matching your search.'
                 }
               </p>
             </div>
@@ -169,7 +240,7 @@ export default function AntiPortfolio() {
 
         <TabsContent value="table">
           <CompanyTable 
-            companies={companies} 
+            companies={currentCompanies} 
             type="anti-portfolio"
             onDelete={handleDelete}
           />

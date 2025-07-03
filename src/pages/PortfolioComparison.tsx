@@ -2,30 +2,44 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { CompanyCard } from "@/components/dashboard/CompanyCard";
-import { useAntiPortfolioCompanies, usePortfolioCompanies } from "@/hooks/useCompanies";
+import { useAntiPortfolioCompanies, usePortfolioCompanies, useUniquePersonNames } from "@/hooks/useCompanies";
 import { useProfiles } from "@/hooks/useProfiles";
 
 export default function PortfolioComparison() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"overall" | "personal">("overall");
+  const [selectedPerson, setSelectedPerson] = useState<string>("");
   
   // Real data from database
   const { data: antiPortfolioCompanies = [] } = useAntiPortfolioCompanies();
   const { data: portfolioCompanies = [] } = usePortfolioCompanies();
   const { data: profiles = [] } = useProfiles();
+  const { data: personNames = [] } = useUniquePersonNames();
+  
+  // Filter companies based on view mode
+  const filteredAntiPortfolioCompanies = viewMode === "personal" && selectedPerson
+    ? antiPortfolioCompanies.filter(company => company.person_name === selectedPerson)
+    : antiPortfolioCompanies;
+    
+  // Note: Portfolio companies don't have person_name, so we can't filter them by person yet
+  // This would require adding person_name to portfolio_companies table
+  const filteredPortfolioCompanies = portfolioCompanies;
   
   // Calculate real statistics from database
   const calculateOverallStats = () => {
-    const totalMissedValue = antiPortfolioCompanies.reduce((sum, company) => {
+    const totalMissedValue = filteredAntiPortfolioCompanies.reduce((sum, company) => {
       const missedValue = (company.current_value || 0) - (company.past_value || 0);
       return sum + Math.max(0, missedValue);
     }, 0);
     
-    const totalPortfolioValue = portfolioCompanies.reduce((sum, company) => 
+    const totalPortfolioValue = filteredPortfolioCompanies.reduce((sum, company) => 
       sum + (company.current_value || 0), 0);
     
-    const antiPortfolioCount = antiPortfolioCompanies.length;
-    const portfolioCount = portfolioCompanies.length;
+    const antiPortfolioCount = filteredAntiPortfolioCompanies.length;
+    const portfolioCount = filteredPortfolioCompanies.length;
     
     return {
       actualPortfolioValue: totalPortfolioValue,
@@ -51,7 +65,7 @@ export default function PortfolioComparison() {
     : 0;
 
   // Transform anti-portfolio data for legacy components
-  const transformedAntiPortfolio = antiPortfolioCompanies.map((company, index) => ({
+  const transformedAntiPortfolio = filteredAntiPortfolioCompanies.map((company, index) => ({
     id: `${company.company_name}-${index}`,
     name: company.company_name,
     sector: company.industry || "Unknown", 
@@ -59,7 +73,7 @@ export default function PortfolioComparison() {
     currentValuation: company.current_value || 0,
     dateConsidered: company.decision_date || "",
     reason: company.reason_not_investing || "",
-    vcLead: "N/A"
+    vcLead: company.person_name || "N/A"
   }));
 
   return (
@@ -72,8 +86,8 @@ export default function PortfolioComparison() {
           </p>
         </div>
 
-      <Tabs defaultValue="overall" className="w-full">
-        <TabsList>
+      <Tabs defaultValue="overall" onValueChange={(value) => setViewMode(value as "overall" | "personal")}>
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
           <TabsTrigger value="overall">Overall</TabsTrigger>
           <TabsTrigger value="personal">Personal</TabsTrigger>
         </TabsList>
@@ -180,7 +194,7 @@ export default function PortfolioComparison() {
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">Biggest Misses</h4>
                 <div className="space-y-1 text-sm">
-                  {antiPortfolioCompanies
+                  {filteredAntiPortfolioCompanies
                     .map(company => ({
                       ...company,
                       missedValue: Math.max(0, (company.current_value || 0) - (company.past_value || 0))
@@ -195,8 +209,12 @@ export default function PortfolioComparison() {
                         </span>
                       </div>
                     ))}
-                  {antiPortfolioCompanies.length === 0 && (
-                    <p className="text-xs text-muted-foreground">No anti-portfolio companies yet</p>
+                  {filteredAntiPortfolioCompanies.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {viewMode === "personal" && selectedPerson 
+                        ? `No anti-portfolio companies for ${selectedPerson}`
+                        : "No anti-portfolio companies yet"}
+                    </p>
                   )}
                 </div>
               </div>
@@ -262,8 +280,8 @@ export default function PortfolioComparison() {
                   : 'Add portfolio companies to see performance comparison'}</li>
                 <li>• The missed opportunities represent {formatCurrency(Math.abs(overallStats.antiPortfolioValue - overallStats.actualPortfolioValue))} in {overallStats.antiPortfolioValue > overallStats.actualPortfolioValue ? 'lost potential' : 'avoided loss'} value</li>
                 <li>• Consider analyzing rejection patterns to improve future investment decisions</li>
-                <li>• {antiPortfolioCompanies.length > 0 
-                  ? `Most common industries in anti-portfolio: ${[...new Set(antiPortfolioCompanies.map(c => c.industry).filter(Boolean))].slice(0, 2).join(', ')}`
+                <li>• {filteredAntiPortfolioCompanies.length > 0 
+                  ? `Most common industries in anti-portfolio: ${[...new Set(filteredAntiPortfolioCompanies.map(c => c.industry).filter(Boolean))].slice(0, 2).join(', ')}`
                   : 'Add anti-portfolio companies to see industry insights'}</li>
               </ul>
             </div>
@@ -272,22 +290,110 @@ export default function PortfolioComparison() {
         </TabsContent>
 
         <TabsContent value="personal" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>👤 Personal Portfolio Comparison</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <Select value={selectedPerson} onValueChange={setSelectedPerson}>
+                <SelectTrigger className="w-[280px] bg-background border-input">
+                  <SelectValue placeholder="Select a person..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-md z-50">
+                  {personNames.map((person) => (
+                    <SelectItem key={person} value={person} className="cursor-pointer hover:bg-accent">
+                      {person}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedPerson && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedPerson("")}
+                  size="sm"
+                >
+                  Clear Selection
+                </Button>
+              )}
+            </div>
+            
+            {selectedPerson ? (
+              <>
+                {/* Show same comparison layout but with filtered data */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Personal Portfolio - would need portfolio filtering by person */}
+                  <Card className="border-chart-positive/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          💼 {selectedPerson}'s Portfolio
+                        </span>
+                        <Badge variant="outline" className="text-chart-positive border-chart-positive">
+                          INVESTED
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-4xl font-bold font-mono text-chart-positive">
+                          {formatCurrency(overallStats.actualPortfolioValue)}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Total Portfolio Value
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Note: Portfolio filtering by person not yet implemented
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Personal Anti-Portfolio */}
+                  <Card className="border-chart-negative/20">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          👻 {selectedPerson}'s Anti-Portfolio
+                        </span>
+                        <Badge variant="outline" className="text-chart-negative border-chart-negative">
+                          MISSED
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-4xl font-bold font-mono text-chart-negative">
+                          {formatCurrency(overallStats.antiPortfolioValue)}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Personal Missed Value
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-mono">{overallStats.antiPortfolioCompanies}</div>
+                          <p className="text-xs text-muted-foreground">Companies</p>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-mono text-chart-negative">
+                            {overallStats.antiPortfolioCompanies > 0 
+                              ? formatCurrency(overallStats.antiPortfolioValue / overallStats.antiPortfolioCompanies)
+                              : "$0"}
+                          </div>
+                          <p className="text-xs text-muted-foreground">Avg Value</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  Personal portfolio comparison requires user authentication.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  This feature will show individual employee performance and their specific portfolio vs anti-portfolio comparison.
-                  Currently showing overall fund data in the "Overall" tab.
+                <p className="text-muted-foreground">
+                  Please select a person to view their personal portfolio comparison.
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
       </div>
