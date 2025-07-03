@@ -18,6 +18,7 @@ export type Database = {
           industry: string | null
           last_updated: string
           notes: string | null
+          person_name: string | null
           updated_at: string
         }
         Insert: {
@@ -28,6 +29,7 @@ export type Database = {
           industry?: string | null
           last_updated?: string
           notes?: string | null
+          person_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -38,6 +40,7 @@ export type Database = {
           industry?: string | null
           last_updated?: string
           notes?: string | null
+          person_name?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -51,6 +54,7 @@ export type Database = {
           industry: string | null
           notes: string | null
           past_value: number | null
+          person_name: string | null
           reason_not_investing: string | null
           updated_at: string
         }
@@ -62,6 +66,7 @@ export type Database = {
           industry?: string | null
           notes?: string | null
           past_value?: number | null
+          person_name?: string | null
           reason_not_investing?: string | null
           updated_at?: string
         }
@@ -73,6 +78,7 @@ export type Database = {
           industry?: string | null
           notes?: string | null
           past_value?: number | null
+          person_name?: string | null
           reason_not_investing?: string | null
           updated_at?: string
         }
@@ -187,6 +193,7 @@ export type Database = {
           growth_percentage: number
           past_entry_created: string
           current_value_updated: string
+          person_name: string
           total_count: number
         }[]
       }
