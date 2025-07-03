@@ -11,6 +11,7 @@ export interface AntiPortfolioCompany {
   notes?: string;
   past_entry_created?: string;
   current_value_updated?: string;
+  person_name?: string;
   growth_percentage?: number;
 }
 

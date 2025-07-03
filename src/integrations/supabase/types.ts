@@ -174,6 +174,7 @@ export type Database = {
           notes: string | null
           past_entry_created: string | null
           past_value: number | null
+          person_name: string | null
           reason_not_investing: string | null
         }
         Relationships: []
