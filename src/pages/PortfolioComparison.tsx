@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CompanyCard } from "@/components/dashboard/CompanyCard";
 import { useAntiPortfolioCompanies, usePortfolioCompanies, useUniquePersonNames } from "@/hooks/useCompanies";
@@ -12,6 +16,7 @@ export default function PortfolioComparison() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"overall" | "personal">("overall");
   const [selectedPerson, setSelectedPerson] = useState<string>("");
+  const [open, setOpen] = useState(false);
   
   // Real data from database
   const { data: antiPortfolioCompanies = [] } = useAntiPortfolioCompanies();
@@ -292,18 +297,47 @@ export default function PortfolioComparison() {
         <TabsContent value="personal" className="space-y-6">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
-              <Select value={selectedPerson} onValueChange={setSelectedPerson}>
-                <SelectTrigger className="w-[280px] bg-background border-input">
-                  <SelectValue placeholder="Select a person..." />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-border shadow-md z-50">
-                  {personNames.map((person) => (
-                    <SelectItem key={person} value={person} className="cursor-pointer hover:bg-accent">
-                      {person}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-[280px] justify-between bg-background"
+                  >
+                    {selectedPerson || "Select a person..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0 bg-background border border-border shadow-md">
+                  <Command>
+                    <CommandInput placeholder="Search people..." />
+                    <CommandList>
+                      <CommandEmpty>No person found.</CommandEmpty>
+                      <CommandGroup>
+                        {personNames.map((person) => (
+                          <CommandItem
+                            key={person}
+                            value={person}
+                            onSelect={(currentValue) => {
+                              setSelectedPerson(currentValue === selectedPerson ? "" : currentValue);
+                              setOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedPerson === person ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {person}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {selectedPerson && (
                 <Button 
                   variant="outline" 
