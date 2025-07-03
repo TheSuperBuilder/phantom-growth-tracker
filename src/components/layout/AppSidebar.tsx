@@ -28,22 +28,22 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
       ? "bg-primary text-primary-foreground font-medium" 
-      : "hover:bg-accent hover:text-accent-foreground";
+      : "text-white hover:bg-accent hover:text-accent-foreground";
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent className="border-r border-border">
         <div className="p-4 border-b border-border">
-          <h2 className={`font-bold text-lg ${collapsed ? "hidden" : "block"}`}>
+          <h2 className={`font-bold text-lg text-white ${collapsed ? "hidden" : "block"}`}>
             <span className="font-mono">phantom-growth</span>
           </h2>
-          <div className={`text-xs text-muted-foreground mt-1 ${collapsed ? "hidden" : "block"}`}>
+          <div className={`text-xs text-white/70 mt-1 ${collapsed ? "hidden" : "block"}`}>
             Anti-Portfolio Tracker
           </div>
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "hidden" : "block"}>
+          <SidebarGroupLabel className={`text-white ${collapsed ? "hidden" : "block"}`}>
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
