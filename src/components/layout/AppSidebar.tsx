@@ -1,5 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+
 const navigationItems = [{
   title: "Anti-Portfolio",
   url: "/",
@@ -17,19 +19,20 @@ const navigationItems = [{
   url: "/integrations",
   icon: "🔗"
 }];
+
+const adminItems = [{
+  title: "User Management",
+  url: "/users",
+  icon: "👥"
+}];
+
 export function AppSidebar() {
-  const {
-    state
-  } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
+  const { isAdmin } = useAuth();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
-  const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({
-    isActive
-  }: {
-    isActive: boolean;
-  }) => isActive ? "bg-primary text-primary-foreground font-medium" : "!text-sidebar-foreground hover:bg-accent hover:!text-sidebar-foreground";
+
   return <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent className="border-r border-border">
         <div className="p-4 border-b border-border">
@@ -58,6 +61,26 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className={`text-white ${collapsed ? "hidden" : "block"}`}>
+              Administration
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map(item => <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink to={item.url} end className="">
+                        <span className="text-lg mr-3">{item.icon}</span>
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>)}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>;
 }
