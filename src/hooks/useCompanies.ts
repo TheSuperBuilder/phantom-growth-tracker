@@ -94,7 +94,8 @@ export function usePastValueCompanies() {
       const { data, error } = await supabase
         .from('past_value_companies')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50000); // Ensure we get all records
 
       if (error) throw error;
       return data as PastValueCompany[];
@@ -109,7 +110,8 @@ export function useCurrentValueCompanies() {
       const { data, error } = await supabase
         .from('current_value_companies')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50000); // Ensure we get all records
 
       if (error) throw error;
       return data as CurrentValueCompany[];
