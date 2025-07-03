@@ -27,24 +27,21 @@ export default function AllRejected() {
   const updateCurrentValue = useUpdateCurrentValueCompany();
   const { toast } = useToast();
 
-  // Filter rejected deals (those that have reason_not_investing)
-  const rejectedDeals = useMemo(() => {
-    return antiPortfolioCompanies.filter(company => 
-      company.reason_not_investing && 
-      company.reason_not_investing.trim() !== ""
-    );
+  // Show all companies from past_value_companies table
+  const allPastValueDeals = useMemo(() => {
+    return antiPortfolioCompanies;
   }, [antiPortfolioCompanies]);
 
   // Apply search filter
   const filteredDeals = useMemo(() => {
-    if (!searchTerm) return rejectedDeals;
+    if (!searchTerm) return allPastValueDeals;
     
-    return rejectedDeals.filter(company =>
+    return allPastValueDeals.filter(company =>
       company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (company.industry && company.industry.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (company.reason_not_investing && company.reason_not_investing.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [rejectedDeals, searchTerm]);
+  }, [allPastValueDeals, searchTerm]);
 
   // Pagination
   const totalPages = Math.ceil(filteredDeals.length / pageSize);
@@ -134,9 +131,9 @@ export default function AllRejected() {
     <div className="space-y-6">
       <div className="flex flex-col space-y-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">All Rejected Deals</h1>
+          <h1 className="text-3xl font-bold tracking-tight">All Past Value Companies</h1>
           <p className="text-muted-foreground">
-            Manage all rejected investment opportunities
+            Manage all companies from past value assessments
           </p>
         </div>
 
@@ -169,15 +166,15 @@ export default function AllRejected() {
 
         {/* Results Summary */}
         <div className="text-sm text-muted-foreground">
-          Showing {startIndex + 1} to {Math.min(startIndex + pageSize, filteredDeals.length)} of {filteredDeals.length} rejected deals
-          {searchTerm && ` (filtered from ${rejectedDeals.length} total)`}
+          Showing {startIndex + 1} to {Math.min(startIndex + pageSize, filteredDeals.length)} of {filteredDeals.length} companies
+          {searchTerm && ` (filtered from ${allPastValueDeals.length} total)`}
         </div>
       </div>
 
       {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Rejected Deals</CardTitle>
+          <CardTitle>Past Value Companies</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -196,7 +193,7 @@ export default function AllRejected() {
               {paginatedDeals.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? "No rejected deals found matching your search" : "No rejected deals found"}
+                    {searchTerm ? "No companies found matching your search" : "No companies found"}
                   </TableCell>
                 </TableRow>
               ) : (
