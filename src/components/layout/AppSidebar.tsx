@@ -13,7 +13,6 @@ import {
 
 const navigationItems = [
   { title: "Anti-Portfolio", url: "/", icon: "📊" },
-  { title: "Personal Dashboard", url: "/personal", icon: "👤" },
   { title: "Portfolio Comparison", url: "/comparison", icon: "⚖️" },
   { title: "Integrations", url: "/integrations", icon: "🔗" },
 ];
