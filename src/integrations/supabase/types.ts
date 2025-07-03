@@ -174,7 +174,22 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_all_rejected_companies: {
+        Args: { search_term?: string; page_size?: number; page_offset?: number }
+        Returns: {
+          company_name: string
+          industry: string
+          decision_date: string
+          reason_not_investing: string
+          notes: string
+          past_value: number
+          current_value: number
+          growth_percentage: number
+          past_entry_created: string
+          current_value_updated: string
+          total_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

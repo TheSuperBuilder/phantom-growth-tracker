@@ -263,6 +263,28 @@ export function useUpdateCurrentValueCompany() {
   });
 }
 
+// New optimized hook for paginated all rejected companies
+export function useAllRejectedCompanies(searchTerm: string = '', page: number = 1, pageSize: number = 100) {
+  return useQuery({
+    queryKey: ['all-rejected-companies', searchTerm, page, pageSize],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_all_rejected_companies', {
+        search_term: searchTerm,
+        page_size: pageSize,
+        page_offset: (page - 1) * pageSize
+      });
+
+      if (error) throw error;
+      return {
+        companies: data || [],
+        totalCount: data?.[0]?.total_count || 0
+      };
+    },
+    // Add debouncing for search
+    staleTime: searchTerm ? 300 : 5 * 60 * 1000, // 300ms for search, 5min for regular data
+  });
+}
+
 export function useDeleteAntiPortfolioCompany() {
   const queryClient = useQueryClient();
   
@@ -285,6 +307,7 @@ export function useDeleteAntiPortfolioCompany() {
       queryClient.invalidateQueries({ queryKey: ['anti-portfolio-view'] });
       queryClient.invalidateQueries({ queryKey: ['past-value-companies'] });
       queryClient.invalidateQueries({ queryKey: ['current-value-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['all-rejected-companies'] });
     },
   });
 }
