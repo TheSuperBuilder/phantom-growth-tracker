@@ -91,14 +91,34 @@ export function usePastValueCompanies() {
   return useQuery({
     queryKey: ['past-value-companies'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('past_value_companies')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50000); // Ensure we get all records
-
-      if (error) throw error;
-      return data as PastValueCompany[];
+      console.log('Fetching past value companies...');
+      
+      // Try to get all records in batches if needed
+      let allData: any[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      
+      while (true) {
+        const { data, error } = await supabase
+          .from('past_value_companies')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) break;
+        
+        allData = [...allData, ...data];
+        console.log(`Fetched ${allData.length} records so far...`);
+        
+        if (data.length < pageSize) break; // Last page
+        
+        from += pageSize;
+      }
+      
+      console.log(`Total past value companies fetched: ${allData.length}`);
+      return allData as PastValueCompany[];
     },
   });
 }

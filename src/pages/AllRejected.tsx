@@ -31,7 +31,10 @@ export default function AllRejected() {
 
   // Merge past value companies with current value data where available
   const allEnrichedDeals = useMemo(() => {
-    return pastValueCompanies.map(pastCompany => {
+    console.log('Past value companies count:', pastValueCompanies.length);
+    console.log('Current value companies count:', currentValueCompanies.length);
+    
+    const enriched = pastValueCompanies.map(pastCompany => {
       const currentCompany = currentValueCompanies.find(
         current => current.company_name === pastCompany.company_name
       );
@@ -51,6 +54,9 @@ export default function AllRejected() {
         past_entry_created: pastCompany.created_at
       };
     });
+    
+    console.log('Enriched deals count:', enriched.length);
+    return enriched;
   }, [pastValueCompanies, currentValueCompanies]);
 
   // Apply search filter
