@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,11 @@ export default function AllRejected() {
   const updatePastValue = useUpdatePastValueCompany();
   const updateCurrentValue = useUpdateCurrentValueCompany();
   const { toast } = useToast();
+
+  // Reset pagination when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Merge past value companies with current value data where available
   const allEnrichedDeals = useMemo(() => {
