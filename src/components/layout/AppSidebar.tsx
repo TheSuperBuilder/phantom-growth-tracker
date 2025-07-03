@@ -14,6 +14,7 @@ import {
 const navigationItems = [
   { title: "Anti-Portfolio", url: "/", icon: "📊" },
   { title: "Portfolio Comparison", url: "/comparison", icon: "⚖️" },
+  { title: "All Rejected", url: "/all-rejected", icon: "❌" },
   { title: "Integrations", url: "/integrations", icon: "🔗" },
 ];
 

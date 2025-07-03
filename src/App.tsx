@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import AntiPortfolio from "./pages/AntiPortfolio";
 import PortfolioComparison from "./pages/PortfolioComparison";
+import AllRejected from "./pages/AllRejected";
 import Integrations from "./pages/Integrations";
 import NotFound from "./pages/NotFound";
 
@@ -21,6 +22,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<AntiPortfolio />} />
             <Route path="/comparison" element={<PortfolioComparison />} />
+            <Route path="/all-rejected" element={<AllRejected />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
