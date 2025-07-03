@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { useAntiPortfolioCompanies, useUpdatePastValueCompany, useUpdateCurrentValueCompany } from "@/hooks/useCompanies";
+import { useAntiPortfolioCompanies, useUpdatePastValueCompany, useUpdateCurrentValueCompany, usePastValueCompanies, useCurrentValueCompanies } from "@/hooks/useCompanies";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Save, X } from "lucide-react";
 
@@ -22,26 +22,47 @@ export default function AllRejected() {
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [editValue, setEditValue] = useState("");
 
-  const { data: antiPortfolioCompanies = [], isLoading } = useAntiPortfolioCompanies();
+  const { data: pastValueCompanies = [], isLoading: isLoadingPast } = usePastValueCompanies();
+  const { data: currentValueCompanies = [], isLoading: isLoadingCurrent } = useCurrentValueCompanies();
+  const isLoading = isLoadingPast || isLoadingCurrent;
   const updatePastValue = useUpdatePastValueCompany();
   const updateCurrentValue = useUpdateCurrentValueCompany();
   const { toast } = useToast();
 
-  // Show all companies from past_value_companies table
-  const allPastValueDeals = useMemo(() => {
-    return antiPortfolioCompanies;
-  }, [antiPortfolioCompanies]);
+  // Merge past value companies with current value data where available
+  const allEnrichedDeals = useMemo(() => {
+    return pastValueCompanies.map(pastCompany => {
+      const currentCompany = currentValueCompanies.find(
+        current => current.company_name === pastCompany.company_name
+      );
+      
+      return {
+        company_name: pastCompany.company_name,
+        industry: pastCompany.industry,
+        decision_date: pastCompany.decision_date,
+        reason_not_investing: pastCompany.reason_not_investing,
+        notes: pastCompany.notes,
+        past_value: pastCompany.past_value,
+        current_value: currentCompany?.current_value || null,
+        current_value_updated: currentCompany?.last_updated || null,
+        growth_percentage: pastCompany.past_value && currentCompany?.current_value 
+          ? ((currentCompany.current_value - pastCompany.past_value) / pastCompany.past_value) * 100
+          : null,
+        past_entry_created: pastCompany.created_at
+      };
+    });
+  }, [pastValueCompanies, currentValueCompanies]);
 
   // Apply search filter
   const filteredDeals = useMemo(() => {
-    if (!searchTerm) return allPastValueDeals;
+    if (!searchTerm) return allEnrichedDeals;
     
-    return allPastValueDeals.filter(company =>
+    return allEnrichedDeals.filter(company =>
       company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (company.industry && company.industry.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (company.reason_not_investing && company.reason_not_investing.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-  }, [allPastValueDeals, searchTerm]);
+  }, [allEnrichedDeals, searchTerm]);
 
   // Pagination
   const totalPages = Math.ceil(filteredDeals.length / pageSize);
@@ -121,7 +142,7 @@ export default function AllRejected() {
       <div className="space-y-6">
         <div className="flex flex-col space-y-4">
           <h1 className="text-3xl font-bold tracking-tight">All Rejected Deals</h1>
-          <p className="text-muted-foreground">Loading rejected deals...</p>
+          <p className="text-muted-foreground">Loading companies...</p>
         </div>
       </div>
     );
@@ -167,7 +188,7 @@ export default function AllRejected() {
         {/* Results Summary */}
         <div className="text-sm text-muted-foreground">
           Showing {startIndex + 1} to {Math.min(startIndex + pageSize, filteredDeals.length)} of {filteredDeals.length} companies
-          {searchTerm && ` (filtered from ${allPastValueDeals.length} total)`}
+          {searchTerm && ` (filtered from ${allEnrichedDeals.length} total)`}
         </div>
       </div>
 
