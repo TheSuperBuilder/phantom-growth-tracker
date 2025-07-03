@@ -44,7 +44,7 @@ export default function AntiPortfolio() {
     currentValuation: company.current_value || 0,
     dateConsidered: company.decision_date || "",
     reason: company.reason_not_investing || "",
-    vcLead: "N/A"
+    vcLead: company.person_name || "N/A"
   }));
 
   const filteredCompanies = mockCompanies.filter(company =>
